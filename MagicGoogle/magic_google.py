@@ -94,9 +94,6 @@ class MagicGoogle():
         :param language: Language
         :return: result
         """
-
-        # print 'Stop some time:' + str(pause)
-        # time.sleep(pause)  # TODO:Don't Pause in
         domain = self.get_random_domain()
         if start > 0:
             url = URL_NEXT
