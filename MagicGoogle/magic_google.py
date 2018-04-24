@@ -57,7 +57,7 @@ class MagicGoogle():
                 result_dict_one = []
                 for item in pq_content('div.g').items():
                     title = item('h3.r>a').eq(0).text()
-                    # ------------------------------Amazon--------------begin--------------------
+                    # ------------------------------------------Amazon--begin--------------------
                     rating = item('div.f.slp').eq(0).text()
                     if rating:
                         rating = rating.encode('utf-8')
@@ -69,7 +69,7 @@ class MagicGoogle():
                     else:
                         star = ''
                         review = ''
-                    # ------------------------------Amazon--------------end--------------------
+                    # ------------------------------------------Amazon--end--------------------
                     href = item('h3.r>a').eq(0).attr('href')
                     if href:
                         url = self.filter_link(href)
