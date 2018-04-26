@@ -18,3 +18,4 @@ rating = rating.decode('utf-8')
 review_num = re.search('\s(\d\.?\d?)/\d+\\n(\d+)', rating)
 review_num = review_num.groups()
 print review_num
+
