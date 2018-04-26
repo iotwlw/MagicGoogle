@@ -4,6 +4,8 @@ import os
 import sys
 import pprint
 
+import re
+
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from MagicBing import MagicBing
 
@@ -23,14 +25,16 @@ for item in pq_content('li.b_algo').items():
     rating = ""
     if item('div.b_vlist2col'):
         rating = item('div.b_vlist2col').eq(0).text()
-        rating_out = rating.split('/')
+        rating_out = re.search('\s(\d\.?\d?)/\d+\\n(\d+)', rating)
+        rating_out = rating_out.groups()
         star = rating_out[0]
         review = rating_out[1]
-
 
     result_dict = {"title": title,
                    "href": href,
                    "rating": rating,
+                   "star": star,
+                   "review": review,
                    }
 
     pprint.pprint(result_dict)
