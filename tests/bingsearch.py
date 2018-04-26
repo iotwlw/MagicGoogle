@@ -14,8 +14,7 @@ PROXIES = [{
 
 mg = MagicGoogle(PROXIES)
 
-postfix = open('./postfix', 'r')
-postfixStr = postfix.readline()
+postfixStr = ' "Currently unavailable." site:www.amazon.co.uk'
 
 
 def getfrombing():
@@ -24,7 +23,7 @@ def getfrombing():
         keyword = keyword.rstrip()
 
         word = keyword + postfixStr
-        url = 'http://global.bing.com/search?q='+quote_plus(word)+'&qs=bs&ajf=60&first=1&Accept-Language=en-us'
+        url = 'http://global.bing.com/search?q='+quote_plus(word)+'&qs=bs&ajf=60&first=1'
 
         flag0 = 3
 
@@ -40,7 +39,7 @@ def getfrombing():
                     flag=9
                 flag0+=flag-1
                 mg.content_to_html(content_html=text, log_prefix_name=keyword + '-' + str(flag0) + ' ')
-                url='http://global.bing.com/search?q='+word+'&qs=bs&ajf=60&first='+str(flag0)+'&Accept-Language=en-us'
+                url='http://global.bing.com/search?q='+word+'&qs=bs&ajf=60&first='+str(flag0)
                 print url
             except Exception as e:
                 print("------------------------------------------------------------{}".format(e))
