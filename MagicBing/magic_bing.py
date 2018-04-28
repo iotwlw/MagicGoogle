@@ -5,6 +5,7 @@ import sys
 import cchardet
 import re
 import requests
+from requests.exceptions import ProxyError
 
 reload(sys)
 sys.setdefaultencoding('utf8')
@@ -28,6 +29,9 @@ class MagicBing:
     def __init__(self, proxies=None):
         self.proxies = random.choice(proxies) if proxies else None
 
+    def change_proxy(self, proxies=None):
+        self.proxies = random.choice(proxies) if proxies else None
+
     def search(self, query, first=1, keyword=None):
         """
         Get the results you want,such as title,description,url
@@ -39,40 +43,51 @@ class MagicBing:
         :return: Generator
         """
         content = self.search_page(query, first, keyword)
+        if content == "proxy error":
+
+            return []
+        elif content == "no proxy error":
+            return []
         self.content_to_html(content_html=content, log_prefix_name=keyword + '-' + str(first) + ' ')
         try:
             pq_content = self.pq_html(content)
-        except Exception as e:
-            print(keyword + str(first) + "-----------------------------------{}".format(e))
-            return []
-        else:
-            if pq_content and '302 Moved' == pq_content('h1').eq(0).text():
-                print(keyword + str(first) + "----------------------------------- Robot checked")
-                return []
-            else:
-                result_dict_one = []
-                for item in pq_content('li.b_algo').items():
-                    title = item('div.b_title>h2>a').eq(0).text()
-                    href = item('div.b_title>h2>a').eq(0).attr('href')
-                    rating = ""
-                    if item('div.b_vlist2col'):
-                        rating = item('div.b_vlist2col').eq(0).text()
-                        rating_out = re.search('\s(\d\.?\d?)/\d+\\n(\d+)', rating)
+            result_dict_one = []
+            for item in pq_content('li.b_algo').items():
+                title = item('div.b_title>h2>a').eq(0).text()
+                href = item('div.b_title>h2>a').eq(0).attr('href')
+                asin = ""
+                review_value = 0.0
+                review_num = 0
+                url = ""
+                if item('div.b_vlist2col'):
+                    rating = item('div.b_vlist2col').eq(0).text()
+                    rating_out = re.search('\s(\d\.?\d?)/\d+\\n(\d+)', rating)
+                    if rating_out:
                         rating_out = rating_out.groups()
-                        star = rating_out[0]
-                        review = rating_out[1]
-                    # ------------------------------------------Amazon--end--------------------
-                    if href:
-                        url = self.filter_link(href)
-
-                    result_dict = {"title": title,
-                                   "star": star,
-                                   "review": review,
-                                   "url": url,
-                                   "rating": rating,
-                                   }
-                    result_dict_one.append(result_dict)
-                return result_dict_one
+                        review_value = rating_out[0]
+                        review_num = rating_out[1]
+                # ------------------------------------------Amazon--end--------------------
+                if href:
+                    url = self.filter_link(href)
+                    asin = re.search('dp/(\w{10})', url)
+                    if asin:
+                        asin = asin.groups()[0]
+                insert_datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                insert_datetime = str(insert_datetime)
+                result_dict = {
+                               "asin": asin,
+                               "insert_datetime": insert_datetime,
+                               "url": url,
+                               "title": title,
+                               "review_num": review_num,
+                               "review_value": review_value,
+                               }
+                result_dict_one.append(result_dict)
+            return result_dict_one
+        except Exception as e:
+            #TODO:need handle just have star
+            print(keyword + str(first) + "-----------analyze error----------------{}".format(e))
+            return []
 
     def search_page(self, query, first=1, keyword=None):
         """
@@ -97,17 +112,21 @@ class MagicBing:
         try:
             requests.packages.urllib3.disable_warnings(requests.packages.urllib3.exceptions.InsecureRequestWarning)
             r = requests.get(url=url,
-                             # proxies=self.proxies,
+                             proxies=self.proxies,
                              headers=headers)
-            LOGGER.info(url)
+            print ("URL_INFO:{}".format(url))
             content = r.content
             charset = cchardet.detect(content)
             text = content.decode(charset['encoding'])
             return text
-        except Exception as e:
+        except ProxyError as e:
             LOGGER.exception(e)
-            print(keyword + str(first) + "----------------------------------- Robot checked")
-            return {}
+            print(keyword + str(first) + "------------------------------ proxy error")
+            return "proxy error"
+        except Exception as e2:
+            LOGGER.exception(e2)
+            print(keyword + str(first) + "------------------------------ no proxy error")
+            return "no proxy error"
 
     def filter_link(self, link):
         """

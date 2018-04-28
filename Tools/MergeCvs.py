@@ -3,9 +3,9 @@
 import pandas as pd
 import os
 
-Folder_Path = r'G:\Amazon\ShopSK\MagicGoogle\Google\AmazonData\keyword2018-04-12'  # 要拼接的文件夹及其完整路径，注意不要包含中文
+Folder_Path = r'G:\Amazon\ShopSK\MagicGoogle\Google\AmazonData\keyword_uk2018-04-24'  # 要拼接的文件夹及其完整路径，注意不要包含中文
 SaveFile_Path = r'G:\Amazon\ShopSK\MagicGoogle\Google\AmazonData'  # 拼接后要保存的文件路径
-SaveFile_Name = r'Keyword TOP 68 2018-04-12.csv'  # 合并后要保存的文件名
+SaveFile_Name = r'Keyword UK TOP 30 2018-04-24.csv'  # 合并后要保存的文件名
 
 # 修改当前工作目录
 os.chdir(Folder_Path)
