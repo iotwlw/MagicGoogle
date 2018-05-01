@@ -6,6 +6,7 @@ import cchardet
 import re
 import requests
 from requests.exceptions import ProxyError
+from proxy_control import ProxyControl
 
 reload(sys)
 sys.setdefaultencoding('utf8')
@@ -13,6 +14,8 @@ sys.setdefaultencoding('utf8')
 from datetime import datetime
 from pyquery import PyQuery as pq
 from MagicBing.config import URL_NEXT, URL_FIRST, USER_AGENT, LOGGER
+
+px = ProxyControl()
 
 if sys.version_info[0] > 2:
     from urllib.parse import quote_plus, urlparse, parse_qs
@@ -43,11 +46,7 @@ class MagicBing:
         :return: Generator
         """
         content = self.search_page(query, first, keyword)
-        if content == "proxy error":
 
-            return []
-        elif content == "no proxy error":
-            return []
         self.content_to_html(content_html=content, log_prefix_name=keyword + '-' + str(first) + ' ')
         try:
             pq_content = self.pq_html(content)
@@ -61,11 +60,13 @@ class MagicBing:
                 url = ""
                 if item('div.b_vlist2col'):
                     rating = item('div.b_vlist2col').eq(0).text()
-                    rating_out = re.search('\s(\d\.?\d?)/\d+\\n(\d+)', rating)
-                    if rating_out:
-                        rating_out = rating_out.groups()
-                        review_value = rating_out[0]
-                        review_num = rating_out[1]
+                    review_value = re.search('\s(\d\.?\d?)/\d+', rating)
+                    review_num = re.search('\\n(\d+)', rating)
+                    if review_value:
+                        review_value = review_value.groups()
+                        review_value = review_value[0]
+                    if review_num:
+                        review_num = review_num.group()
                 # ------------------------------------------Amazon--end--------------------
                 if href:
                     url = self.filter_link(href)
@@ -112,7 +113,7 @@ class MagicBing:
         try:
             requests.packages.urllib3.disable_warnings(requests.packages.urllib3.exceptions.InsecureRequestWarning)
             r = requests.get(url=url,
-                             proxies=self.proxies,
+                             proxies=px.proxies,
                              headers=headers)
             print ("URL_INFO:{}".format(url))
             content = r.content
@@ -121,12 +122,31 @@ class MagicBing:
             return text
         except ProxyError as e:
             LOGGER.exception(e)
-            print(keyword + str(first) + "------------------------------ proxy error")
-            return "proxy error"
-        except Exception as e2:
-            LOGGER.exception(e2)
+            print(keyword + str(first) + "------------------------------ change proxy -------------------------")
+            text = self.robot_check(url)
+            return text
+        except Exception as e:
             print(keyword + str(first) + "------------------------------ no proxy error")
-            return "no proxy error"
+            raise e
+
+    def robot_check(self, url):
+        count = 9
+        while count > 0:
+            headers = {'User-Agent': self.get_random_user_agent()}
+            proxies = px.detect_proxy()
+            if proxies:
+                try:
+                    r = requests.get(url, headers=headers, proxies=proxies)
+                    content = r.content
+                    charset = cchardet.detect(content)
+                    text = content.decode(charset['encoding'])
+                    return text
+                except ProxyError as e:
+                    LOGGER.exception(e)
+                except Exception as e2:
+                    LOGGER.exception(e2)
+            count -= 1
+        raise ProxyError
 
     def filter_link(self, link):
         """

@@ -69,9 +69,9 @@ def bing_search():
             for row in cursor.fetchall():
                 keyword = row["key_word"]
                 if row["key_state"]:
-                    row["key_state"] = row["key_state"]+"UK;"
+                    row["key_state"] = row["key_state"]+"US;"
                 else:
-                    row["key_state"] = "UK;"
+                    row["key_state"] = "US;"
                 keywords.append(row)
                 result_keyword = []
                 for p in range(0, 80):
