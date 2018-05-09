@@ -108,9 +108,9 @@ def google_search():
                 for p in range(0, pages):
                     start = p * results_per_page
                     get_url_sleep_time = random.randint(2, 5)
-                    result_keyword_one, result_num = mg.search(query=keyword + postfix, num=results_per_page, language='en',
-                                                   start=start,
-                                                   pause=get_url_sleep_time, keyword=keyword)
+                    result_keyword_one, result_num = mg.search(query=keyword + postfix, num=results_per_page,
+                                                               language='en', start=start,
+                                                               pause=get_url_sleep_time, keyword=keyword)
                     result_keyword = result_keyword + result_keyword_one
                     insert_mysql(result_keyword_one, "listing_google_us")
                     print 'Stop some time:' + str(get_url_sleep_time)
