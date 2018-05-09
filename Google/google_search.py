@@ -1,10 +1,11 @@
+# coding:utf-8
 import contextlib
 import os
 import sys
 import random
-import pprint
 import time
 
+import logging
 import pymysql
 
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
@@ -24,6 +25,12 @@ PROXIES = [{
 
 # Or MagicGoogle()
 mg = MagicGoogle(PROXIES)
+
+logging.getLogger("urllib3").setLevel(logging.WARNING)
+logging.getLogger("chardet").setLevel(logging.WARNING)
+logging.getLogger("requests").setLevel(logging.WARNING)
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s: %(message)s')
+LOGGER = logging.getLogger('google_search.py')
 
 # 定义上下文管理器，连接后自动关闭连接
 @contextlib.contextmanager
@@ -69,35 +76,70 @@ def insert_mysql(offer_dict_list, table_name):
         print("INSERT " + table_name + " errors:{}".format(e), datas)
 
 
+def google_search():
+    postfix = open('../config/postfix', 'r')
+    postfix = postfix.readline()
 
-postfix = open('../config/postfix', 'r')
-postfixStr = postfix.readline()
+    with mysql() as cursor:
+        try:
+            row_count = cursor.execute("SELECT DISTINCT key_state, key_word from key_word_us where key_state is null limit 20")
+            print "---------------------------ALL KEYWORD:"+str(row_count)+"---------------------------"
+            keywords = []
+            for row in cursor.fetchall():
+                keywordone = []
+                keyword = row["key_word"]
+                if row["key_state"]:
+                    row["key_state"] = row["key_state"]+"US;"
+                else:
+                    row["key_state"] = "US;"
+                keywords.append(row)
+                keywordone.append(row)
+                # Total data number
+                num = 400
+                # Per page number
+                results_per_page = 100
+                if num % results_per_page == 0:
+                    pages = num / results_per_page
+                else:
+                    pages = num / results_per_page + 1
 
-result_list = []
-csv_prefix_name = "ALL"
-headers = ['title', 'rating', 'star', 'review', 'url']
+                result_keyword = []
 
-keywords = open('./keywords', 'r')
-for keyword in keywords:
-    keyword = keyword.strip()
-    # Total data number
-    num = 400
-    # Per page number
-    results_per_page = 100
-    if num % results_per_page == 0:
-        pages = num / results_per_page
-    else:
-        pages = num / results_per_page + 1
+                for p in range(0, pages):
+                    start = p * results_per_page
+                    get_url_sleep_time = random.randint(2, 5)
+                    result_keyword_one, result_num = mg.search(query=keyword + postfix, num=results_per_page, language='en',
+                                                   start=start,
+                                                   pause=get_url_sleep_time, keyword=keyword)
+                    result_keyword = result_keyword + result_keyword_one
+                    insert_mysql(result_keyword_one, "listing_google_us")
+                    print 'Stop some time:' + str(get_url_sleep_time)
+                    time.sleep(get_url_sleep_time)
+                    if result_num < start + 100:
+                        break
+                update_key_word(keywordone)
+        except Exception as e:
+            print("---------------------------KEYWORD ERROR:"+str(row_count)+"---------------------------{}".format(e))
+            LOGGER.exception(e)
+            # update_key_word(keywords)
+            # insert_mysql(result_keyword, "listing_google_us")
 
-    result_keyword = []
 
-    for p in range(0, pages):
-        start = p * results_per_page
-        get_url_sleep_time = random.randint(2, 5)
-        result_keyword_one = mg.search(query=keyword + postfixStr, num=results_per_page, language='en', start=start,
-                           pause=get_url_sleep_time, keyword=keyword)
-        result_keyword = result_keyword + result_keyword_one
-        print 'Stop some time:' + str(get_url_sleep_time)
-        time.sleep(get_url_sleep_time)
+def update_key_word(keywords):
+    update_sql = "UPDATE key_word_us set key_state = %s  where key_word = %s"
+    datas = []
+    try:
+        for i in keywords:
+            data = (i["key_state"], i["key_word"])
+            datas.append(data)
+    except Exception as e:
+        print("Splicing UPDATE key_word_us data errors:{}".format(e))
+    try:
+        with mysql() as cursor:
+            row_count = cursor.executemany(update_sql, datas)
+            print("UPDATE key_word_us {}/{} success:", row_count, len(keywords))
+    except Exception as e:
+        print("UPDATE key_word_us errors:{}".format(e), keywords)
 
-    insert_mysql(result_keyword, "listing_google")
+
+google_search()
