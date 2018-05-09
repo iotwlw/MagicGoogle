@@ -19,3 +19,9 @@ review_num = re.search('\s(\d\.?\d?)/\d+\\n(\d+)', rating)
 review_num = review_num.groups()
 print review_num
 
+
+review_value = re.search('bout\s(\d*,?\d*,?\d*,?\d*) results\s', 'Page 2 of about 4,420,000 results (0.62 seconds)')
+review_value = review_value.group()
+review_value = review_value.lstrip('bout ').rstrip(' results').replace(',', '')
+
+print review_value
