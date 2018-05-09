@@ -66,7 +66,7 @@ class MagicBing:
                         review_value = review_value.groups()
                         review_value = review_value[0]
                     if review_num:
-                        review_num = review_num.group()
+                        review_num = review_num.group().replace(',', '')
                 # ------------------------------------------Amazon--end--------------------
                 if href:
                     url = self.filter_link(href)

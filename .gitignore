@@ -9,6 +9,9 @@ build/
 dist/
 *.egg-info/
 config/
-Google/
+Google/AmazonData/
+Google/log/
+keyword*
+success
 *.idea/
 test.html
