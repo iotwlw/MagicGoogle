@@ -5,7 +5,9 @@ import time
 
 import csv
 import cchardet
+import re
 import requests
+from requests.exceptions import SSLError
 
 reload(sys)
 sys.setdefaultencoding('utf8')
@@ -42,47 +44,80 @@ class MagicGoogle():
         :return: Generator
         """
         content = self.search_page(query, language, num, start, pause, keyword)
-        self.content_to_html(content_html=content, log_prefix_name=keyword + '-' + str(start) + ' ')
+        # self.content_to_html(content_html=content, log_prefix_name=keyword + '-' + str(start) + ' ')
         try:
             pq_content = self.pq_html(content)
         except Exception as e:
             print(keyword + str(start) + "-----------------------------------{}".format(e))
-            return []
+            return [], -1
         else:
-            if pq_content and '302 Moved' == pq_content('h1').eq(0).text():
-                os.system('start G:\911S5\ProxyTool\AutoProxyTool.exe  -changeproxy/US')
-                print(keyword + str(start) + "----------------------------------- change proxy")
-                return []
-            else:
-                result_dict_one = []
-                for item in pq_content('div.g').items():
-                    title = item('h3.r>a').eq(0).text()
-                    # ------------------------------------------Amazon--begin--------------------
-                    rating = item('div.f.slp').eq(0).text()
-                    if rating:
-                        rating = rating.encode('utf-8')
-                        rating = rating.replace("\xc2\xa0", "")
-                        rating_out = rating.lstrip('Rating: ').rstrip(' reviews')
-                        rating_out = rating_out.split('-')
-                        star = rating_out[0]
-                        review = rating_out[1]
-                    else:
-                        star = ''
-                        review = ''
-                    # ------------------------------------------Amazon--end--------------------
-                    href = item('h3.r>a').eq(0).attr('href')
-                    if href:
-                        url = self.filter_link(href)
-                    # text = item('span.st').text()
 
-                    result_dict = {"title": title,
-                                   "star": star,
-                                   "review": review,
-                                   "url": url,
-                                   "rating": rating,
-                                   }
-                    result_dict_one.append(result_dict)
-                return result_dict_one
+            if pq_content and '302 Moved' == pq_content('h1').eq(0).text():
+                try:
+                    os.system('start G:\911S5\ProxyTool\AutoProxyTool.exe  -changeproxy/US')
+                    print(keyword + str(start) + "----------------------------------- change proxy")
+                    time.sleep(6)
+                    content = self.search_page(query, language, num, start, pause, keyword)
+                    pq_content = self.pq_html(content)
+                except Exception as e:
+                    print(keyword + str(start) + "--------------------after change proxy error---------------{}".format(e))
+                    return [], -1
+
+            try:
+                result_num = pq_content('#resultStats')
+                if result_num:
+                    result_num = result_num.text()
+                    result_num = re.search('bout\s(\d*,?\d*,?\d*,?\d*) results', result_num)
+                    if result_num:
+                        result_num = result_num.group()
+                        result_num = result_num.lstrip('bout ').rstrip(' results').replace(',', '')
+                        result_num = int(result_num)
+                    else:
+                        return [], 0
+                else:
+                    return [], 0
+            except Exception as e:
+                result_num = -1
+                print(keyword + str(start) + "------------------result_num errors------------{}".format(e))
+
+            result_dict_one = []
+            for item in pq_content('div.g').items():
+                asin = ""
+                url = ""
+                title = item('h3.r>a').eq(0).text()
+                # ------------------------------------------Amazon--begin--------------------
+                rating = item('div.f.slp').eq(0).text()
+                if rating:
+                    rating = rating.encode('utf-8')
+                    rating = rating.replace("\xc2\xa0", "")
+                    rating_out = rating.lstrip('Rating: ').rstrip(' reviews')
+                    rating_out = rating_out.split('-')
+                    star = rating_out[0]
+                    review = rating_out[1].replace(',', '')
+                else:
+                    star = 0.0
+                    review = 0
+                # ------------------------------------------Amazon--end--------------------
+                href = item('h3.r>a').eq(0).attr('href')
+                if href:
+                    url = self.filter_link(href)
+                    if url:
+                        asin = re.search('dp/(\w{10})', url)
+                        if asin:
+                            asin = asin.groups()[0]
+                insert_datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                insert_datetime = str(insert_datetime)
+
+                result_dict = {
+                    "asin": asin,
+                    "insert_datetime": insert_datetime,
+                    "url": url,
+                    "title": title,
+                    "review_num": review,
+                    "review_value": star,
+                }
+                result_dict_one.append(result_dict)
+                return result_dict_one, result_num
 
     def search_page(self, query, language=None, num=None, start=0, pause=2, keyword=None):
         """
@@ -125,10 +160,12 @@ class MagicGoogle():
             charset = cchardet.detect(content)
             text = content.decode(charset['encoding'])
             return text
+        except SSLError as e:
+            LOGGER.exception(e)
+            return {}
         except Exception as e:
             LOGGER.exception(e)
-            os.system('start G:\911S5\ProxyTool\AutoProxyTool.exe  -changeproxy/US')
-            print(keyword + str(start) + "----------------------------------- change proxy for bad proxy")
+            print(keyword + str(start) + "----------------------------------- change proxy for I dont know")
             return {}
 
     def search_url(self, query, language=None, num=None, start=0, pause=2):
