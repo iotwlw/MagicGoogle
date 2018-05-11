@@ -54,11 +54,11 @@ class MagicGoogle():
 
             if pq_content and '302 Moved' == pq_content('h1').eq(0).text():
                 try:
-                    os.system('start G:\911S5\ProxyTool\AutoProxyTool.exe  -changeproxy/US')
                     print(keyword + str(start) + "----------------------------------- change proxy")
-                    time.sleep(6)
-                    content = self.search_page(query, language, num, start, pause, keyword)
-                    pq_content = self.pq_html(content)
+                    # os.system('start G:\911S5\ProxyTool\AutoProxyTool.exe  -changeproxy/US')
+                    # time.sleep(6)
+                    # content = self.search_page(query, language, num, start, pause, keyword)
+                    # pq_content = self.pq_html(content)
                 except Exception as e:
                     print(keyword + str(start) + "--------------------after change proxy error---------------{}".format(e))
                     return [], -1
@@ -67,10 +67,10 @@ class MagicGoogle():
                 result_num = pq_content('#resultStats')
                 if result_num:
                     result_num = result_num.text()
-                    result_num = re.search('bout\s(\d*,?\d*,?\d*,?\d*) results', result_num)
+                    result_num = re.search('bout\s(\d*,?\.?\d*,?\.?\d*,?\.?\d*) results', result_num)
                     if result_num:
                         result_num = result_num.group()
-                        result_num = result_num.lstrip('bout ').rstrip(' results').replace(',', '')
+                        result_num = result_num.lstrip('bout ').rstrip(' results').replace(',', '').replace('.', '')
                         result_num = int(result_num)
                     else:
                         return [], 0
@@ -92,7 +92,7 @@ class MagicGoogle():
                     rating = rating.replace("\xc2\xa0", "")
                     rating_out = rating.lstrip('Rating: ').rstrip(' reviews')
                     rating_out = rating_out.split('-')
-                    star = rating_out[0]
+                    star = rating_out[0].replace(',', '.')
                     review = rating_out[1].replace(',', '')
                 else:
                     star = 0.0
@@ -117,7 +117,7 @@ class MagicGoogle():
                     "review_value": star,
                 }
                 result_dict_one.append(result_dict)
-                return result_dict_one, result_num
+            return result_dict_one, result_num
 
     def search_page(self, query, language=None, num=None, start=0, pause=2, keyword=None):
         """
