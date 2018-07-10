@@ -165,7 +165,7 @@ class MagicGoogle():
             return {}
         except Exception as e:
             LOGGER.exception(e)
-            # os.system('start G:\911S5\ProxyTool\AutoProxyTool.exe  -changeproxy/US')
+            os.system('start G:\911S5\ProxyTool\AutoProxyTool.exe  -changeproxy/US')
             print(keyword + str(start) + "----------------------------------- change proxy for bad proxy")
             return {}
 
