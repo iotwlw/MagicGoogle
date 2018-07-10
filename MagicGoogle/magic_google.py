@@ -55,10 +55,10 @@ class MagicGoogle():
             if pq_content and '302 Moved' == pq_content('h1').eq(0).text():
                 try:
                     print(keyword + str(start) + "----------------------------------- change proxy")
-                    # os.system('start G:\911S5\ProxyTool\AutoProxyTool.exe  -changeproxy/US')
-                    # time.sleep(6)
-                    # content = self.search_page(query, language, num, start, pause, keyword)
-                    # pq_content = self.pq_html(content)
+                    os.system('start G:\911S5\ProxyTool\AutoProxyTool.exe  -changeproxy/US')
+                    time.sleep(6)
+                    content = self.search_page(query, language, num, start, pause, keyword)
+                    pq_content = self.pq_html(content)
                 except Exception as e:
                     print(keyword + str(start) + "--------------------after change proxy error---------------{}".format(e))
                     return [], -1
@@ -165,7 +165,8 @@ class MagicGoogle():
             return {}
         except Exception as e:
             LOGGER.exception(e)
-            print(keyword + str(start) + "----------------------------------- change proxy for I dont know")
+            # os.system('start G:\911S5\ProxyTool\AutoProxyTool.exe  -changeproxy/US')
+            print(keyword + str(start) + "----------------------------------- change proxy for bad proxy")
             return {}
 
     def search_url(self, query, language=None, num=None, start=0, pause=2):
@@ -230,7 +231,8 @@ class MagicGoogle():
         Get a random domain.
         :return: Random user agent string.
         """
-        domain = random.choice(self.get_data('all_domain.txt', DOMAIN))
+        # domain = random.choice(self.get_data('all_domain.txt', DOMAIN))
+        domain = 'www.google.com'
         if domain in BLACK_DOMAIN:
             self.get_random_domain()
         else:

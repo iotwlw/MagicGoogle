@@ -82,7 +82,88 @@ def google_search():
 
     with mysql() as cursor:
         try:
-            row_count = cursor.execute("SELECT DISTINCT key_state, key_word from key_word_us where key_state is null limit 20")
+            row_count = cursor.execute("SELECT  key_state, key_word from key_word_us where key_state is null  ORDER BY key_utime desc  limit 23 ")
+            print "---------------------------ALL KEYWORD:"+str(row_count)+"---------------------------"
+            keywords = []
+            for row in cursor.fetchall():
+                keywordone = []
+                keyword = row["key_word"]
+                if row["key_state"]:
+                    row["key_state"] = row["key_state"]+"US;"
+                else:
+                    row["key_state"] = "US;"
+                keywords.append(row)
+                keywordone.append(row)
+                # Total data number
+                num = 400
+                # Per page number
+                results_per_page = 100
+                if num % results_per_page == 0:
+                    pages = num / results_per_page
+                else:
+                    pages = num / results_per_page + 1
+
+                result_keyword = []
+
+                for p in range(0, pages):
+                    start = p * results_per_page
+                    get_url_sleep_time = random.randint(2, 5)
+                    result_keyword_one, result_num = mg.search(query=keyword + postfix, num=results_per_page,
+                                                               language='en', start=start,
+                                                               pause=get_url_sleep_time, keyword=keyword)
+                    result_keyword = result_keyword + result_keyword_one
+                    insert_mysql(result_keyword_one, "listing_google_us")
+                    print 'Stop some time:' + str(get_url_sleep_time)
+                    time.sleep(get_url_sleep_time)
+                    if result_num < start + 100:
+                        break
+                update_key_word(keywordone)
+        except Exception as e:
+            print("---------------------------KEYWORD ERROR:"+str(row_count)+"---------------------------{}".format(e))
+            LOGGER.exception(e)
+            # update_key_word(keywords)
+            # insert_mysql(result_keyword, "listing_google_us")
+
+def google_search2():
+    postfix = open('../config/postfix', 'r')
+    postfixStr = postfix.readline()
+
+    keywords = open('./bigkey', 'r')
+    for keyword in keywords:
+        keyword = keyword.strip()
+        # Total data number
+        num = 400
+        # Per page number
+        results_per_page = 100
+        if num % results_per_page == 0:
+            pages = num / results_per_page
+        else:
+            pages = num / results_per_page + 1
+
+        result_keyword = []
+
+        for p in range(0, pages):
+            start = p * results_per_page
+            get_url_sleep_time = random.randint(2, 5)
+            result_keyword_one, result_num = mg.search(query=keyword + postfixStr, num=results_per_page,
+                                                       language='en', start=start,
+                                                       pause=get_url_sleep_time, keyword=keyword)
+            insert_mysql(result_keyword_one, "listing_google_us")
+            print 'Stop some time:' + str(get_url_sleep_time)
+            time.sleep(get_url_sleep_time)
+            if result_num < start + 100:
+                break
+
+
+
+
+def google_search_for_brand():
+    postfix = open('../config/postfix', 'r')
+    postfix = postfix.readline()
+
+    with mysql() as cursor:
+        try:
+            row_count = cursor.execute("SELECT  key_state, key_word from key_word_us where key_state is null  ORDER BY key_utime desc  limit 100 ")
             print "---------------------------ALL KEYWORD:"+str(row_count)+"---------------------------"
             keywords = []
             for row in cursor.fetchall():
@@ -125,6 +206,7 @@ def google_search():
             # insert_mysql(result_keyword, "listing_google_us")
 
 
+
 def update_key_word(keywords):
     update_sql = "UPDATE key_word_us set key_state = %s  where key_word = %s"
     datas = []
@@ -142,4 +224,4 @@ def update_key_word(keywords):
         print("UPDATE key_word_us errors:{}".format(e), keywords)
 
 
-google_search()
+google_search2()

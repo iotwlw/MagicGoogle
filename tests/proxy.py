@@ -33,7 +33,7 @@ headers = random.choice(headers_list)
 proxies = {'https': 'https://218.60.8.98:3129', }
 
 
-url='https://www.amazon.co.uk/'
+url='https://www.amazon.com/dp/B07DNBF6N9'
 res = requests.get(url, headers=headers
                    , proxies=proxies
                    , timeout=10
