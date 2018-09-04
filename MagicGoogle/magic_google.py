@@ -3,6 +3,8 @@ import random
 import sys
 import time
 
+import subprocess
+
 import csv
 import cchardet
 import re
@@ -28,9 +30,6 @@ class MagicGoogle():
     Magic google search.
     """
 
-    def __init__(self, proxies=None):
-        self.proxies = random.choice(proxies) if proxies else None
-
     def search(self, query, language=None, num=None, start=0, pause=2, keyword=None, keytype=None):
         """
         Get the results you want,such as title,description,url
@@ -45,23 +44,21 @@ class MagicGoogle():
         :return: Generator
         """
         content = self.search_page(query, language, num, start, pause, keyword)
-        # self.content_to_html(content_html=content, log_prefix_name=keyword + '-' + str(start) + ' ')
         try:
             pq_content = self.pq_html(content)
         except Exception as e:
-            print(keyword + str(start) + "-----------------------------------{}".format(e))
+            print(keyword + str(start) + "-----------pq_html---------error---------------{}".format(e))
             return [], -1
         else:
 
             if pq_content and '302 Moved' == pq_content('h1').eq(0).text():
                 try:
-                    print(keyword + str(start) + "----------------------------------- change proxy")
-                    os.system('start G:\911S5\ProxyTool\AutoProxyTool.exe  -changeproxy/US')
-                    time.sleep(6)
+                    print(keyword + str(start) + "-------------- change proxy")
+                    self.change_ip_for_vps()
                     content = self.search_page(query, language, num, start, pause, keyword)
                     pq_content = self.pq_html(content)
                 except Exception as e:
-                    print(keyword + str(start) + "--------------------after change proxy error---------------{}".format(e))
+                    print(keyword + str(start) + "------after change proxy error-------{}".format(e))
                     return [], -1
 
             try:
@@ -159,20 +156,19 @@ class MagicGoogle():
                              allow_redirects=False,
                              verify=False,
                              timeout=30)
-            LOGGER.info(url)
             content = r.content
             charset = cchardet.detect(content)
             text = content.decode(charset['encoding'])
             return text
         except SSLError as e:
             LOGGER.exception(e)
+            LOGGER.info(url)
             return {}
         except Exception as e:
             LOGGER.exception(e)
-            os.system('start G:\911S5\ProxyTool\AutoProxyTool.exe  -changeproxy/US')
-            os.system('start G:\911S5\ProxyTool\AutoProxyTool.exe  -changeproxy/US')
-            os.system('start G:\911S5\ProxyTool\AutoProxyTool.exe  -changeproxy/US')
-            print(keyword + str(start) + "----------------------------------- change proxy for bad proxy")
+            LOGGER.info(url)
+            print(keyword + str(start) + "---------- change proxy for bad proxy -------------")
+            self.change_ip_for_vps()
             return {}
 
     def search_url(self, query, language=None, num=None, start=0, pause=2):
@@ -300,3 +296,19 @@ class MagicGoogle():
             f.close()
         except Exception as e:
             print("fail to write log!: {}".format(e))
+
+    def change_ip_for_vps(self):
+        try:
+            subprocess.Popen('pppoe-stop', shell=True, stdout=subprocess.PIPE)
+            time.sleep(2)
+            subprocess.Popen('pppoe-start', shell=True, stdout=subprocess.PIPE)
+            time.sleep(5)
+            pppoe_restart = subprocess.Popen('pppoe-status', shell=True, stdout=subprocess.PIPE)
+            pppoe_restart.wait()
+            pppoe_log = pppoe_restart.communicate()[0]
+            adsl_ip = re.findall(r'inet (.+?) peer ', pppoe_log)[0]
+            print '[*] New ip address : ' + adsl_ip
+            return True
+        except Exception, e:
+            print e
+            self.change_ip_for_vps()

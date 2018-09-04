@@ -22,7 +22,7 @@ PROXIES = [{
 }]
 
 # Or MagicGoogle()
-mg = MagicGoogle(PROXIES)
+mg = MagicGoogle()
 
 logging.getLogger("urllib3").setLevel(logging.WARNING)
 logging.getLogger("chardet").setLevel(logging.WARNING)
@@ -70,7 +70,7 @@ def insert_mysql(offer_dict_list, table_name):
     try:
         with mysql() as cursor:
             cursor.executemany(insert_into_sql, datas)
-            print "INSERT " + table_name + ", Num:", len(datas)
+            # print "INSERT " + table_name + ", Num:", len(datas)
     except Exception as e:
         print insert_into_sql
         print("INSERT " + table_name + " errors:{}".format(e), datas)
@@ -83,11 +83,12 @@ def google_search():
     with mysql() as cursor:
         try:
             row_count = cursor.execute(
-                "SELECT  key_state, key_word from key_word_us where key_state is null  ORDER BY key_utime desc  ")
+                "SELECT  key_state, key_word from key_word_us where key_state is null  ORDER BY key_utime desc ")
             print "---------------------------ALL KEYWORD:" + str(row_count) + "---------------------------"
             for row in cursor.fetchall():
                 keywordone = []
                 keyword = row["key_word"]
+
                 if row["key_state"]:
                     row["key_state"] = row["key_state"] + "US;"
                 else:
@@ -111,7 +112,6 @@ def google_search():
                                                                pause=get_url_sleep_time, keyword=keyword,)
                     result_keyword = result_keyword + result_keyword_one
                     insert_mysql(result_keyword_one, "listing_google_us")
-                    print 'Stop some time:' + str(get_url_sleep_time)
                     time.sleep(get_url_sleep_time)
                     if result_num < start + 100:
                         break
@@ -119,18 +119,15 @@ def google_search():
                 keywordone.append(row)
                 update_key_word(keywordone)
         except Exception as e:
-            print(
-            "---------------------------KEYWORD ERROR:" + str(row_count) + "---------------------------{}".format(e))
+            print("----------------------KEYWORD ERROR:" + str(row_count) + "------------------------{}".format(e))
             LOGGER.exception(e)
-            # update_key_word(keywords)
-            # insert_mysql(result_keyword, "listing_google_us")
 
 
 def google_search_for_bigkey():
     postfix = open('./config/postfix', 'r')
     postfixStr = postfix.readline()
 
-    keywords = open('./bigkey', 'r')
+    keywords = open('./Google/bigkey', 'r')
     for keyword in keywords:
         keyword = keyword.strip()
         # Total data number
@@ -141,8 +138,6 @@ def google_search_for_bigkey():
             pages = num / results_per_page
         else:
             pages = num / results_per_page + 1
-
-        result_keyword = []
 
         for p in range(0, pages):
             start = p * results_per_page
@@ -169,7 +164,7 @@ def update_key_word(keywords):
     try:
         with mysql() as cursor:
             row_count = cursor.executemany(update_sql, datas)
-            print("UPDATE key_word_us {}/{} success:", row_count, len(keywords))
+            # print("UPDATE key_word_us {}/{} success:", row_count, len(keywords))
     except Exception as e:
         print("UPDATE key_word_us errors:{}".format(e), keywords)
 
@@ -192,7 +187,6 @@ def google_search_for_brand(keytype):
             for row in cursor.fetchall():
                 keywordone = []
                 keyword = row["key_word"]
-
                 # Total data number
                 num = 400
                 results_per_page = 100
@@ -225,11 +219,8 @@ def google_search_for_brand(keytype):
                 keywordone.append(row)
                 update_key_brand(keywordone, keytype)
         except Exception as e:
-            print(
-            "---------------------------KEYWORD ERROR:" + str(row_count) + "---------------------------{}".format(e))
+            print("-----------------------KEYWORD ERROR:" + str(row_count) + "---------------------{}".format(e))
             LOGGER.exception(e)
-            # update_key_word(keywords)
-            # insert_mysql(result_keyword, "listing_google_us")
 
 
 def update_key_brand(keywords, keytype):
