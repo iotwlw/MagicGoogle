@@ -30,13 +30,13 @@ headers_list = [
             {'User-Agent': 'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1)'}
         ]
 headers = random.choice(headers_list)
-proxies = {'https': 'https://218.60.8.98:3129', }
+proxies = {'http': 'http://172.247.55.152:3128'}
 
 
-url='https://www.amazon.com/dp/B07DNBF6N9'
+url='https://www.baidu.com'
 res = requests.get(url, headers=headers
                    , proxies=proxies
-                   , timeout=10
+                   , timeout=20
                    )
 print res.content
 

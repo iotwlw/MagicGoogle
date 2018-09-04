@@ -31,11 +31,12 @@ class MagicGoogle():
     def __init__(self, proxies=None):
         self.proxies = random.choice(proxies) if proxies else None
 
-    def search(self, query, language=None, num=None, start=0, pause=2, keyword=None):
+    def search(self, query, language=None, num=None, start=0, pause=2, keyword=None, keytype=None):
         """
         Get the results you want,such as title,description,url
 
         :param keyword: 
+        :param keytype: 
         :param pause: 
         :param query:
         :param language:
@@ -115,6 +116,9 @@ class MagicGoogle():
                     "title": title,
                     "review_num": review,
                     "review_value": star,
+                    "keytype": keytype,
+                    "keyword": keyword
+
                 }
                 result_dict_one.append(result_dict)
             return result_dict_one, result_num
@@ -165,6 +169,8 @@ class MagicGoogle():
             return {}
         except Exception as e:
             LOGGER.exception(e)
+            os.system('start G:\911S5\ProxyTool\AutoProxyTool.exe  -changeproxy/US')
+            os.system('start G:\911S5\ProxyTool\AutoProxyTool.exe  -changeproxy/US')
             os.system('start G:\911S5\ProxyTool\AutoProxyTool.exe  -changeproxy/US')
             print(keyword + str(start) + "----------------------------------- change proxy for bad proxy")
             return {}
