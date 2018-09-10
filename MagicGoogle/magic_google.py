@@ -47,18 +47,18 @@ class MagicGoogle():
         try:
             pq_content = self.pq_html(content)
         except Exception as e:
-            print(keyword + str(start) + "-----------pq_html---------error---------------{}".format(e))
+            LOGGER.info(keyword + str(start) + "-----------pq_html----error----------{}".format(e))
             return [], -1
         else:
 
             if pq_content and '302 Moved' == pq_content('h1').eq(0).text():
                 try:
-                    print(keyword + str(start) + "-------------- change proxy")
+                    LOGGER.info(keyword + str(start) + "-------------- change proxy--------------")
                     self.change_ip_for_vps()
                     content = self.search_page(query, language, num, start, pause, keyword)
                     pq_content = self.pq_html(content)
                 except Exception as e:
-                    print(keyword + str(start) + "------after change proxy error-------{}".format(e))
+                    LOGGER.info(keyword + str(start) + "------after change proxy error-------{}".format(e))
                     return [], -1
 
             try:
@@ -76,7 +76,7 @@ class MagicGoogle():
                     return [], 0
             except Exception as e:
                 result_num = -1
-                print(keyword + str(start) + "------------------result_num errors------------{}".format(e))
+                LOGGER.info(keyword + str(start) + "-------result_num errors------------{}".format(e))
 
             result_dict_one = []
             for item in pq_content('div.g').items():
@@ -167,7 +167,7 @@ class MagicGoogle():
         except Exception as e:
             LOGGER.exception(e)
             LOGGER.info(url)
-            print(keyword + str(start) + "---------- change proxy for bad proxy -------------")
+            LOGGER.info(keyword + str(start) + "------- change proxy for bad proxy ---------")
             self.change_ip_for_vps()
             return {}
 
@@ -307,8 +307,9 @@ class MagicGoogle():
             pppoe_restart.wait()
             pppoe_log = pppoe_restart.communicate()[0]
             adsl_ip = re.findall(r'inet (.+?) peer ', pppoe_log)[0]
-            print '[*] New ip address : ' + adsl_ip
+            LOGGER.info('[*] New ip address : ' + adsl_ip)
+
             return True
         except Exception, e:
-            print e
-            self.change_ip_for_vps()
+            LOGGER.info(e)
+            return False

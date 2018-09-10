@@ -58,22 +58,21 @@ def insert_mysql(offer_dict_list, table_name):
         else:
             return
     except Exception as e:
-        print("Splicing insert_into_" + table_name + "_sql errors:{}".format(e))
+        LOGGER.info("Splicing insert_into_" + table_name + "_sql errors:{}".format(e))
 
     try:
         for i in offer_dict_list:
             data = tuple(i.values())
             datas.append(data)
     except Exception as e:
-        print("Splicing insert_into_" + table_name + "_data errors:{}".format(e))
+        LOGGER.info("Splicing insert_into_" + table_name + "_data errors:{}".format(e))
 
     try:
         with mysql() as cursor:
             cursor.executemany(insert_into_sql, datas)
-            # print "INSERT " + table_name + ", Num:", len(datas)
     except Exception as e:
-        print insert_into_sql
-        print("INSERT " + table_name + " errors:{}".format(e), datas)
+        LOGGER.info(insert_into_sql)
+        LOGGER.info("INSERT " + table_name + " errors:{}".format(e), datas)
 
 
 def google_search():
@@ -84,7 +83,7 @@ def google_search():
         try:
             row_count = cursor.execute(
                 "SELECT  key_state, key_word from key_word_us where key_state is null  ORDER BY key_utime desc ")
-            print "---------------------------ALL KEYWORD:" + str(row_count) + "---------------------------"
+            LOGGER.info("----------------ALL KEYWORD:" + str(row_count) + "-----------------")
             for row in cursor.fetchall():
                 keywordone = []
                 keyword = row["key_word"]
@@ -93,17 +92,13 @@ def google_search():
                     row["key_state"] = row["key_state"] + "US;"
                 else:
                     row["key_state"] = "US;"
-                # Total data number
                 num = 400
-                # Per page number
                 results_per_page = 100
                 if num % results_per_page == 0:
                     pages = num / results_per_page
                 else:
                     pages = num / results_per_page + 1
-
                 result_keyword = []
-
                 for p in range(0, pages):
                     start = p * results_per_page
                     get_url_sleep_time = random.randint(2, 5)
@@ -118,21 +113,19 @@ def google_search():
                 row["key_count"] = len(result_keyword)
                 keywordone.append(row)
                 update_key_word(keywordone)
+                LOGGER.info ('KEY:' + keyword + '('+str(row["key_count"])+') ')
         except Exception as e:
-            print("----------------------KEYWORD ERROR:" + str(row_count) + "------------------------{}".format(e))
+            LOGGER.info("--------------KEYWORD ERROR:" + str(row_count) + "------------{}".format(e))
             LOGGER.exception(e)
 
 
 def google_search_for_bigkey():
     postfix = open('./config/postfix', 'r')
     postfixStr = postfix.readline()
-
     keywords = open('./Google/bigkey', 'r')
     for keyword in keywords:
         keyword = keyword.strip()
-        # Total data number
         num = 400
-        # Per page number
         results_per_page = 100
         if num % results_per_page == 0:
             pages = num / results_per_page
@@ -146,7 +139,6 @@ def google_search_for_bigkey():
                                                        language='en', start=start,
                                                        pause=get_url_sleep_time, keyword=keyword)
             insert_mysql(result_keyword_one, "listing_google_us")
-            print 'Stop some time:' + str(get_url_sleep_time)
             time.sleep(get_url_sleep_time)
             if result_num < start + 100:
                 break
@@ -160,13 +152,12 @@ def update_key_word(keywords):
             data = (i["key_state"], i["key_count"], i["key_word"])
             datas.append(data)
     except Exception as e:
-        print("Splicing UPDATE key_word_us data errors:{}".format(e))
+        LOGGER.info("Splicing UPDATE key_word_us data errors:{}".format(e))
     try:
         with mysql() as cursor:
             row_count = cursor.executemany(update_sql, datas)
-            # print("UPDATE key_word_us {}/{} success:", row_count, len(keywords))
     except Exception as e:
-        print("UPDATE key_word_us errors:{}".format(e), keywords)
+        LOGGER.info("UPDATE key_word_us errors" + keywords + ":{}".format(e) )
 
 
 def google_search_for_brand_all():
@@ -183,7 +174,7 @@ def google_search_for_brand(keytype):
         try:
             sql = "SELECT key_word,key_" + keytype + " from key_brand where key_" + keytype + " = 0 ORDER BY key_utime desc"
             row_count = cursor.execute(sql)
-            print "-------------------------ALL Brand " + keytype + ":" + str(row_count) + "---------------------------"
+            LOGGER.info("-------------ALL Brand " + keytype + ":" + str(row_count) + "---------------")
             for row in cursor.fetchall():
                 keywordone = []
                 keyword = row["key_word"]
@@ -210,7 +201,7 @@ def google_search_for_brand(keytype):
                                                                keytype=keytype)
                     result_keyword = result_keyword + result_keyword_one
                     insert_mysql(result_keyword_one, "listing_google_us")
-                    print 'Stop some time:' + str(get_url_sleep_time)
+                    LOGGER.info('Stop some time:' + str(get_url_sleep_time))
                     time.sleep(get_url_sleep_time)
                     if result_num < start + 100:
                         break
@@ -219,7 +210,7 @@ def google_search_for_brand(keytype):
                 keywordone.append(row)
                 update_key_brand(keywordone, keytype)
         except Exception as e:
-            print("-----------------------KEYWORD ERROR:" + str(row_count) + "---------------------{}".format(e))
+            LOGGER.info("-----------------------KEYWORD ERROR:" + str(row_count) + "---------------------{}".format(e))
             LOGGER.exception(e)
 
 
@@ -231,13 +222,13 @@ def update_key_brand(keywords, keytype):
             data = (i[keytype], i["key_word"])
             datas.append(data)
     except Exception as e:
-        print("Splicing UPDATE key_brand data errors:{}".format(e))
+        LOGGER.info("Splicing UPDATE key_brand data errors:{}".format(e))
     try:
         with mysql() as cursor:
             row_count = cursor.executemany(update_sql, datas)
-            print("UPDATE key_brand {}/{} success:", row_count, len(keywords))
+            LOGGER.info("UPDATE key_brand {}/{} success:", row_count, len(keywords))
     except Exception as e:
-        print("UPDATE key_brand errors:{}".format(e), keywords)
+        LOGGER.info("UPDATE key_brand errors:{}".format(e), keywords)
 
 
 google_search()
