@@ -33,7 +33,7 @@ LOGGER = logging.getLogger('google_search.py')
 
 # 定义上下文管理器，连接后自动关闭连接
 @contextlib.contextmanager
-def mysql(host='127.0.0.1', port=3306, user='root', passwd='P@ssw0rd', db='amazon_db', charset='utf8'):
+def mysql(host='127.0.0.1', port=3306, user='root', passwd='wlw@601_SK', db='amazon_db2', charset='utf8'):
     conn = pymysql.connect(host=host, port=port, user=user, passwd=passwd, db=db, charset=charset)
     cursor = conn.cursor(cursor=pymysql.cursors.DictCursor)
     try:
@@ -72,17 +72,18 @@ def insert_mysql(offer_dict_list, table_name):
             cursor.executemany(insert_into_sql, datas)
     except Exception as e:
         LOGGER.info(insert_into_sql)
-        LOGGER.info("INSERT " + table_name + " errors:{}".format(e), datas)
+        LOGGER.info(datas)
+        LOGGER.info("INSERT " + table_name + " errors:{}".format(e))
 
 
 def google_search():
-    postfix = open('./config/postfix', 'r')
+    postfix = open('/root/qq/config/postfix', 'r')
     postfix = postfix.readline()
 
     with mysql() as cursor:
         try:
             row_count = cursor.execute(
-                "SELECT  key_state, key_word from key_word_us where key_state is null  ORDER BY key_utime desc ")
+                "SELECT DISTINCT key_state, key_word from key_word_us where key_state is null limit 1000")
             LOGGER.info("----------------ALL KEYWORD:" + str(row_count) + "-----------------")
             for row in cursor.fetchall():
                 keywordone = []
@@ -113,16 +114,18 @@ def google_search():
                 row["key_count"] = len(result_keyword)
                 keywordone.append(row)
                 update_key_word(keywordone)
-                LOGGER.info ('KEY:' + keyword + '('+str(row["key_count"])+') ')
+                LOGGER.info('KEY:' + keyword + '('+str(row["key_count"])+') ')
+            os.system("nohup python2 /root/ff/filter_listing.py >/root/ff/outputtest 2>&1 &")
         except Exception as e:
             LOGGER.info("--------------KEYWORD ERROR:" + str(row_count) + "------------{}".format(e))
             LOGGER.exception(e)
+            os.system("nohup python2 /root/ff/filter_listing.py >/root/ff/outputtest 2>&1 &")
 
 
 def google_search_for_bigkey():
-    postfix = open('./config/postfix', 'r')
+    postfix = open('/root/qq/config/postfix', 'r')
     postfixStr = postfix.readline()
-    keywords = open('./Google/bigkey', 'r')
+    keywords = open('/root/qq/Google/bigkey', 'r')
     for keyword in keywords:
         keyword = keyword.strip()
         num = 400
@@ -167,7 +170,7 @@ def google_search_for_brand_all():
 
 
 def google_search_for_brand(keytype):
-    postfix = open('./config/postfix', 'r')
+    postfix = open('/root/qq/config/postfix', 'r')
     postfix = postfix.readline()
 
     with mysql() as cursor:
